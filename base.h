@@ -99,9 +99,10 @@
 
 /////////////////////////////////////////////////////////// ENUM ///////////////////////////////////////////////////////////
 enum error {
-    NULL_ERROR = 0,
-    NULL_MEMORY_ERR = 1,
-    CANT_OPEN_FILE = 2,
+    NULL_ERROR = 0x0,
+    NULL_MEMORY_ERR = 0x1,
+    CANT_OPEN_FILE = 0x2,
+    CANT_MAKE_DIR = 0x3,
 };
 
 enum compare {

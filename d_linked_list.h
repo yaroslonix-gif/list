@@ -2,9 +2,12 @@
 
 typedef long long elem_list_t;
 
-const char DIR_NAME[] = {'d', 'u', 'm', 'p', __TIME__[0], __TIME__[1], __TIME__[3], __TIME__[4], __TIME__[6], __TIME__[7], '\0'};
+const char DIR_NAME[] = {'d', 'u', 'm', 'p', __TIME__[0], __TIME__[1], __TIME__[3], __TIME__[4], __TIME__[6], __TIME__[7], '\0'}; // snprintf
 
 #define LLIST_DEBUG_ON
+
+#define HAVE_ERROR 1
+#define MIN_CAPACITY 4
 
 #define LLIST_VERIFY(l_list) { \
     enum LLIST_errs err = LListVerify(l_list); \
@@ -15,13 +18,13 @@ const char DIR_NAME[] = {'d', 'u', 'm', 'p', __TIME__[0], __TIME__[1], __TIME__[
 }
 
 #ifdef LLIST_DEBUG_ON
-    #define LLIST_DUMP(l_list, message) LListDump(l_list, message);
+    #define LLIST_DUMP_VERIFY(l_list, message) LListDumpVerify(l_list, message);
     #define LLIST_ASSERT(l_list) { \
         HARD_ASSERT(l_list != NULL, NULL_LLIST); \
         HARD_ASSERT(l_list->list != NULL, NULL_LIST); \
     }
 #else
-    #define LLIST_DUMP
+    #define LLIST_DUMP_VERIFY(l_list, message)
 #endif
 
 enum LLIST_errs {
@@ -65,8 +68,14 @@ void RemoveElemLList(struct linked_list* l_list, size_t pos);
 
 int64_t get_pos_in_list(struct linked_list* l_list, size_t real_pos);
 
-void LListDump(struct linked_list* l_list, const char* message);
+void LListDumpVerify(struct linked_list* l_list, const char* message);
 
-void LListGraphicDump(struct linked_list* l_list, const char* file_name);
+int LListGraphicDump(struct linked_list* l_list, const char* file_name);
 
 enum LLIST_errs LListVerify(const struct linked_list* l_list);
+
+void _LListBasePartVerify(struct linked_list* l_list, FILE* dump_out, int* have_err);
+
+void _DumpCheckLListElems(struct linked_list* l_list, FILE* dump_out, int* have_err);
+
+void _DumpCheckLListFreeElems(struct linked_list* l_list, FILE* dump_out, int* have_err);
