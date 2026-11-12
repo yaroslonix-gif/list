@@ -9,14 +9,6 @@ const char DIR_NAME[] = {'d', 'u', 'm', 'p', __TIME__[0], __TIME__[1], __TIME__[
 #define HAVE_ERROR 1
 #define MIN_CAPACITY 4
 
-#define LLIST_VERIFY(l_list) { \
-    enum LLIST_errs err = LListVerify(l_list); \
-    if (err != LLIST_OK) { \
-        LOGG("LList ERROR code: %d\n", err); \
-        abort(); \
-    } \
-}
-
 #ifdef LLIST_DEBUG_ON
     #define LLIST_DUMP_VERIFY(l_list, message) LListDumpVerify(l_list, message);
     #define LLIST_ASSERT(l_list) { \
@@ -43,7 +35,7 @@ enum LLIST_errs {
 /////////////////////////////////////////////////////////// STRUCT ///////////////////////////////////////////////////////////
 struct list_element {
     elem_list_t value;
-    int64_t next;
+    uint64_t next;
     int64_t prev;
 };
 
@@ -58,24 +50,28 @@ struct linked_list {
 };
 
 /////////////////////////////////////////////////////////// ПРОТОТИПЫ ФУНКЦИЙ ///////////////////////////////////////////////////////////
+
 void InitLList(struct linked_list* l_list, size_t capacity);
 
 void DestroyLList(struct linked_list* l_list);
 
-void InsertElemLList(struct linked_list* l_list, size_t pos, elem_list_t val);
+int64_t InsertElemLList(struct linked_list* l_list, size_t pos, elem_list_t val);
 
 void RemoveElemLList(struct linked_list* l_list, size_t pos);
 
 int64_t get_pos_in_list(struct linked_list* l_list, size_t real_pos);
 
+
+//========================================================= Верификация и дамп =========================================================//
 void LListDumpVerify(struct linked_list* l_list, const char* message);
 
 int LListGraphicDump(struct linked_list* l_list, const char* file_name);
-
-enum LLIST_errs LListVerify(const struct linked_list* l_list);
 
 void _LListBasePartVerify(struct linked_list* l_list, FILE* dump_out, int* have_err);
 
 void _DumpCheckLListElems(struct linked_list* l_list, FILE* dump_out, int* have_err);
 
 void _DumpCheckLListFreeElems(struct linked_list* l_list, FILE* dump_out, int* have_err);
+
+
+int CreateDir(const char* dir_name);
