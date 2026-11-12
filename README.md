@@ -21,16 +21,21 @@ struct linked_list {
 ```
 
 ## Функции
-- **void InitLList(struct linked_list* l_list, size_t capacity);** – инициализация списка
-- **void LListDumpVerify(struct linked_list* l_list, const char* message);** – функция вызова верификации списка с графическим дампом
-- **void DestroyLList(struct linked_list* l_list);** – деструктор списка
-- **int64_t InsertElemLList(struct linked_list* l_list, size_t pos, elem_list_t val);** - вставка элемента после позиции pos в массиве, для вставки элемента перед началом списка используется нулевой индекс
-- **void RemoveElemLList(struct linked_list* l_list, size_t pos);** – удаление элемента на позиции pos в массиве
-- **int64_t get_pos_in_list(struct linked_list* l_list, size_t real_pos);** – поиск индекса в массиве по номеру в списке
-- **int LListGraphicDump(struct linked_list* l_list, const char* file_name);** – графический дамп с верификацией
+- **void InitLList(struct linked_list\* l_list, size_t capacity);** – инициализация списка
+- **void LListDumpVerify(struct linked_list\* l_list, const char\* message);** – функция вызова верификации списка с графическим дампом
+- **void DestroyLList(struct linked_list\* l_list);** – деструктор списка
+- **int64_t InsertElemLList(struct linked_list\* l_list, size_t pos, elem_list_t val);** - вставка элемента после позиции pos в массиве, для вставки элемента перед началом списка используется нулевой индекс
+- **void RemoveElemLList(struct linked_list\* l_list, size_t pos);** – удаление элемента на позиции pos в массиве
+- **int64_t get_pos_in_list(struct linked_list\* l_list, size_t real_pos);** – поиск индекса в массиве по номеру в списке
+- **int LListGraphicDump(struct linked_list\* l_list, const char\* file_name);** – графический дамп с верификацией
 
 ### Особенности
-1. 
+1. Графический дамп
+<img width="922" height="419" alt="image" src="https://github.com/user-attachments/assets/af379dfa-ab96-498c-a178-7ef2d7ed474a" />
+
+2. В случае ошибки, будет выведен соответствующий текст, а проблемные элементы будут подсвечены красным
+
+
 
 ## Компиляция
 gcc d_linked_list.c base.c -o llist
