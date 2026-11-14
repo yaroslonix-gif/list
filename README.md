@@ -19,6 +19,7 @@ struct linked_list {
     uint64_t size;              // размер текущего списка
 };
 ```
+- **elem_list_t** задает тип значения элемента, например: *typedef long long elem_list_t;*
 
 ## Функции
 - **void InitLList(struct linked_list\* l_list, size_t capacity);** – инициализация списка
@@ -34,8 +35,9 @@ struct linked_list {
 <img width="922" height="419" alt="image" src="https://github.com/user-attachments/assets/af379dfa-ab96-498c-a178-7ef2d7ed474a" />
 
 2. В случае ошибки, будет выведен соответствующий текст, а проблемные элементы будут подсвечены красным
+<img width="935" height="559" alt="image" src="https://github.com/user-attachments/assets/03ecb109-6dfd-4773-b531-1f32e4df2fdd" />
 
-
+3. Флаг LLIST_DEBUG_ON отвечает за активацию графического дампа
 
 ## Компиляция
 gcc d_linked_list.c base.c -o llist
