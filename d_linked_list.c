@@ -17,13 +17,15 @@ int main() {
     InsertElemLList(&l_list, 1, 15);
     RemoveElemLList(&l_list, 2);
     InsertElemLList(&l_list, 1, 20);
-    //l_list.list[3].prev = 7;
+    
     //l_list.list[2].next = 999;
     //l_list.list[8].next = 1;
     InsertElemLList(&l_list, 4, 60);
     InsertElemLList(&l_list, 4, 60);
     InsertElemLList(&l_list, 4, 60);
     InsertElemLList(&l_list, 4, 60);
+    //l_list.list[3].prev = 7;
+    //l_list.list[8].prev = 7;
     InsertElemLList(&l_list, 4, 60);
     InsertElemLList(&l_list, 4, 60);
 
@@ -255,10 +257,6 @@ int LListGraphicDump(struct linked_list* l_list, const char* file_name) {
         _DumpCheckLListFreeElems(l_list, dump_out, &have_err);
     }
 
-    fprintf(dump_out, "  edge[color = \"#36799D\", weight = 5, dir = forward];\n");
-    fprintf(dump_out, "  { rank=same; NODE%llu; FREE; }\n", l_list->free);
-    fprintf(dump_out, "  FREE->NODE%llu;\n", l_list->free);
-
     fprintf(dump_out, "}\n");
 
     fclose(dump_out);
@@ -320,11 +318,7 @@ void _DumpCheckLListElems(struct linked_list* l_list, FILE* dump_out, int* have_
     HARD_ASSERT(l_list != NULL, NULL_ERROR);
     HARD_ASSERT(l_list->list != NULL, NULL_ERROR);
     HARD_ASSERT(dump_out != NULL, NULL_ERROR);
-    HARD_ASSERT(have_err != NULL, NULL_ERROR);
-
-    fprintf(dump_out, "  edge[color = \"black\", weight = 10];\n");
-    uint64_t current_pos = l_list->head;
-    fprintf(dump_out, "  NODE0"); 
+    HARD_ASSERT(have_err != NULL, NULL_ERROR); 
 
     int* visited = (int*)calloc(l_list->capacity, sizeof(int));
     if (visited == NULL) {
@@ -333,16 +327,23 @@ void _DumpCheckLListElems(struct linked_list* l_list, FILE* dump_out, int* have_
         return;
     }
 
+    fprintf(dump_out, "  edge[color = \"black\", weight = 10];\n");
+
     uint64_t cur_sz = 0;
+    uint64_t prev_pos = 0;
+    uint64_t current_pos = l_list->head;
 
     while (current_pos != 0) {
         if (current_pos >= l_list->capacity) {
+            fprintf(dump_out, "NODE%llu->NODE%llu[color = \"#ff0000\"];\n", prev_pos, current_pos);
+            fprintf(dump_out, "  NODE%llu[style=dashed, color=\"#ff0000\", label=\"?%llu\"];\n", current_pos, current_pos);
             LOGG("OUT_OF_LIST: %llu\n", current_pos);
             *have_err = HAVE_ERROR;
             break;
         }
 
         if (visited[current_pos] != 0) {
+            fprintf(dump_out, "NODE%llu->NODE%llu[color = \"#ff0000\"];\n", prev_pos, current_pos);
             LOGG("CYCLE: %llu\n", current_pos);
             visited[current_pos] = -1;
             *have_err = HAVE_ERROR;
@@ -352,10 +353,11 @@ void _DumpCheckLListElems(struct linked_list* l_list, FILE* dump_out, int* have_
         visited[current_pos] = 1;
         cur_sz++;
 
-        fprintf(dump_out, "->NODE%zu", current_pos);
-        
         uint64_t next_pos = l_list->list[current_pos].next;
+
         if (next_pos >= l_list->capacity) {
+            fprintf(dump_out, "NODE%llu->NODE%llu[color = \"#ff0000\"];\n", current_pos, next_pos);
+            fprintf(dump_out, "  NODE%llu[style=dashed, color=\"#ff0000\", label=\"?%llu\"];\n", next_pos, next_pos);
             visited[current_pos] = -1;
             LOGG("NEXT OUT OF LIST %llu\n", current_pos);
             *have_err = HAVE_ERROR;
@@ -363,45 +365,59 @@ void _DumpCheckLListElems(struct linked_list* l_list, FILE* dump_out, int* have_
         }
 
         if (next_pos != 0 && l_list->list[next_pos].prev != (int64_t)current_pos) {
+            fprintf(dump_out, "NODE%llu->NODE%llu[color = \"#ff0000\"];\n", current_pos, next_pos);
             visited[next_pos] = -1;
-            LOGG("LINK_ERROR\n");
+            LOGG("LINK_ERROR %llu\n", current_pos);
             *have_err = HAVE_ERROR;
             break;
         }
 
+        if (next_pos != 0) {
+            fprintf(dump_out, "NODE%llu->NODE%llu[color = \"#000000\"];\n", current_pos, next_pos);
+        }
+
+        prev_pos    = current_pos;
         current_pos = next_pos;
     }
 
     if (current_pos == 0) {
-        fprintf(dump_out, "->NODE0");
+        int64_t cur_tail = l_list->list[0].prev;
+        int tail_ok = 1;
 
-        size_t cur_tail = l_list->list[0].prev;
-        if (cur_tail != 0 && l_list->list[cur_tail].next != 0) {
+        if (cur_tail >= l_list->capacity) {
+            LOGG("TAIL OUT OF LIST\n");
+            *have_err = HAVE_ERROR;
+            tail_ok = 0;
+
+        } else if (cur_tail != 0 && l_list->list[cur_tail].next != 0) {
             LOGG("LINK_ERROR_TAIL\n");
             *have_err = HAVE_ERROR;
+            tail_ok = 0;
         }
 
         if (cur_tail == 0 && cur_sz != 0) {
             LOGG("LINK_ERROR_TAIL_ISEMPTY_BUT_SIZE\n");
             *have_err = HAVE_ERROR;
+            tail_ok = 0;
         }
+
+        fprintf(dump_out, "  NODE%llu->NODE0[color = \"%s\"];\n", prev_pos, tail_ok ? "black" : "#ff0000");
         
-    } else {
+    } else if (current_pos != 0) {
         LOGG("LINK_ERROR_TAIL\n");
         *have_err = HAVE_ERROR;
-        visited[current_pos] = -1;
+        if (current_pos < l_list->capacity)
+            visited[current_pos] = -1;
     }
 
     if (cur_sz != l_list->size) {
-        LOGG("SIZE_ERROR\n");
+        LOGG("SIZE_ERROR: got %llu, expected %llu\n", cur_sz, l_list->size);
         *have_err = HAVE_ERROR;
     }
 
-    fprintf(dump_out, ";\n");
-
     for (size_t i = 1; i < l_list->capacity; i++) {
         if (visited[i] == -1) {
-            fprintf(dump_out, "  NODE%zu[color = \"#800000\", fillcolor = \"#FFC0C0\"]", i);
+            fprintf(dump_out, "  NODE%llu[color = \"#800000\", fillcolor = \"#FFC0C0\"];\n", i);
             continue;
         }
 
@@ -409,20 +425,24 @@ void _DumpCheckLListElems(struct linked_list* l_list, FILE* dump_out, int* have_
             continue;
         
         if (l_list->list[i].prev != -1) {
-            fprintf(dump_out, "  NODE%zu[color = \"#800000\", fillcolor = \"#FFC0C0\"]", i);
+            fprintf(dump_out, "  NODE%llu[color = \"#800000\", fillcolor = \"#FFC0C0\"];\n", i);
             *have_err = HAVE_ERROR;
         }
     }
 
     free(visited);
 
-    fprintf(dump_out, "  edge[color = \"#000080\", weight = 5, dir = forward];\n");
-    fprintf(dump_out, "  { rank=same; NODE%zu; HEAD; }\n", l_list->head);
-    fprintf(dump_out, "  HEAD->NODE%zu;\n", l_list->head);
+    if (l_list->head != 0) {
+        fprintf(dump_out, "  NODE0->NODE%llu[color = \"black\", constraint = false];\n", l_list->head);
+    }
 
-    fprintf(dump_out, "  edge[color = \"#808000\", weight = 5, dir = forward];\n");
-    fprintf(dump_out, "  { rank=same; NODE%zu; TAIL; }\n", l_list->tail);
-    fprintf(dump_out, "  TAIL->NODE%zu;\n", l_list->tail);
+    fprintf(dump_out, "  edge[color = \"#000080\", weight = 0, dir = forward];\n");
+    fprintf(dump_out, "  { rank=same; NODE%llu; HEAD; }\n", l_list->head);
+    fprintf(dump_out, "  HEAD->NODE%llu[constraint = false];\n", l_list->head);
+
+    fprintf(dump_out, "  edge[color = \"#808000\", weight = 0, dir = forward];\n");
+    fprintf(dump_out, "  { rank=same; NODE%llu; TAIL; }\n", l_list->tail);
+    fprintf(dump_out, "  TAIL->NODE%llu[constraint = false];\n", l_list->tail);
 }
 
 void _DumpCheckLListFreeElems(struct linked_list* l_list, FILE* dump_out, int* have_err) {
@@ -431,10 +451,6 @@ void _DumpCheckLListFreeElems(struct linked_list* l_list, FILE* dump_out, int* h
     HARD_ASSERT(dump_out != NULL, NULL_ERROR);
     HARD_ASSERT(have_err != NULL, NULL_ERROR);
 
-    fprintf(dump_out, "  edge[color = \"#C0C0FF\", weight = 10];\n");
-    uint64_t current_pos = l_list->free;
-    fprintf(dump_out, "  NODE%zu", current_pos);
-
     int* visited = (int*)calloc(l_list->capacity, sizeof(int));
     if (visited == NULL) {
         LOGG("CAN'T MAKE VISITED IN DumpCheckLListElems\n");
@@ -442,16 +458,23 @@ void _DumpCheckLListFreeElems(struct linked_list* l_list, FILE* dump_out, int* h
         return;
     }
 
+    fprintf(dump_out, "  edge[color = \"#C0C0FF\", weight = 10];\n");
+
+    uint64_t current_pos = l_list->free;
+    uint64_t prev_pos = 0;
     uint64_t cur_sz = 0;
 
     while (current_pos != 0) {
-        if (current_pos >= l_list->capacity)   {
-            LOGG("OUT_OF_LIST: %llu\n", current_pos);
+        if (current_pos >= l_list->capacity) {
+            fprintf(dump_out, "NODE%llu->NODE%llu[color = \"#ff0000\"];\n", prev_pos, current_pos);
+            fprintf(dump_out, "  NODE%llu[style=dashed, color=\"#ff0000\", label=\"?%llu\"];\n", current_pos, current_pos);
+            LOGG("FREE_OUT_OF_LIST: %llu\n", current_pos);
             *have_err = HAVE_ERROR;
             break;
         }
 
         if (visited[current_pos] != 0) {
+            fprintf(dump_out, "NODE%llu->NODE%llu[color = \"#ff0000\"];\n", prev_pos, current_pos);
             LOGG("CYCLE: %llu\n", current_pos);
             visited[current_pos] = -1;
             *have_err = HAVE_ERROR;
@@ -462,48 +485,67 @@ void _DumpCheckLListFreeElems(struct linked_list* l_list, FILE* dump_out, int* h
         cur_sz++;
         
         uint64_t next_pos = l_list->list[current_pos].next;
-        if (next_pos != 0 && next_pos < l_list->capacity && l_list->list[next_pos].prev == -1) {
-            current_pos = next_pos;
-            fprintf(dump_out, "->NODE%zu", current_pos);
-            continue;
+
+        if (next_pos >= l_list->capacity) { 
+            fprintf(dump_out, "NODE%llu->NODE%llu[color = \"#ff0000\"];\n", current_pos, next_pos);
+            fprintf(dump_out, "  NODE%llu[style=dashed, color=\"#ff0000\", label=\"?%llu\"];\n", next_pos, next_pos);
+            LOGG("FREE_NEXT_OUT_OF_LIST %llu\n", current_pos);
+            *have_err = HAVE_ERROR;
         }
 
         if (next_pos == 0) {
+            fprintf(dump_out, "NODE%llu->NODE0[color = \"#C0C0FF\"];\n", current_pos);
+            prev_pos    = current_pos;
             current_pos = next_pos;
             continue;
         }
 
-        visited[next_pos] = -1;
-        LOGG("LINK_FREE_ERROR %llu\n", current_pos);
-        *have_err = HAVE_ERROR;
-        break;        
+        if (l_list->list[next_pos].prev != -1) {
+            fprintf(dump_out, "  NODE%llu->NODE%llu[color = \"#ff0000\"];\n", current_pos, next_pos);
+            visited[next_pos] = -1;
+            LOGG("FREE_LINK_ERROR %llu\n", current_pos);
+            *have_err = HAVE_ERROR;
+            break;
+        }
+
+        fprintf(dump_out, "  NODE%llu->NODE%llu[color = \"#C0C0FF\"];\n", current_pos, next_pos);
+
+        prev_pos    = current_pos;
+        current_pos = next_pos;    
     }
 
-    if (current_pos == 0) {
-        visited[current_pos] = 1;
-    } else {
-        LOGG("LINK_FREE_ERROR_TAIL\n");
-        visited[current_pos] = -1;
+    if (current_pos != 0) {
+        LOGG("FREE_LINK_ERROR_TAIL\n");
+        *have_err = HAVE_ERROR;
+        if (current_pos < l_list->capacity)
+            visited[current_pos] = -1;
     }
 
     if (cur_sz != (l_list->capacity - l_list->size - 1)) {
-        LOGG("SIZE_ERROR\n");
+        LOGG("FREE_SIZE_ERROR: got %llu, expected %llu\n", cur_sz, (l_list->capacity - l_list->size - 1));
         *have_err = HAVE_ERROR;
     }
 
-    fprintf(dump_out, ";\n");
-
     for (size_t i = 1; i < l_list->capacity; i++) {
         if (visited[i] == -1) {
-            fprintf(dump_out, "  NODE%zu[color = \"#800000\", fillcolor = \"#FFC0C0\"]", i);
+            fprintf(dump_out, "  NODE%llu[color = \"#800000\", fillcolor = \"#FFC0C0\"];\n", i);
             continue;
         }
 
         if (visited[i] == 1)
             continue;
+        
+        if (l_list->list[i].prev == -1) {
+            fprintf(dump_out, "  NODE%llu[color = \"#800000\", fillcolor = \"#FFC0C0\"];\n", i);
+            *have_err = HAVE_ERROR;
+        }
     }
 
     free(visited);
+
+    fprintf(dump_out, "  edge[color = \"#36799D\", weight = 5, dir = forward];\n");
+    fprintf(dump_out, "  { rank=same; NODE%llu; FREE; }\n", l_list->free);
+    fprintf(dump_out, "  FREE->NODE%llu;\n", l_list->free);
 }
 
 int CreateDir(const char* dir_name) {
